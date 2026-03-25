@@ -1,0 +1,66 @@
+import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
+import { sign } from 'hono/jwt'
+import { Env, LoginResponse } from '../types'
+
+const authRouter = new Hono<{ Bindings: Env }>()
+
+const LoginSchema = z.object({
+  chat_id: z.string().min(1, 'Chat ID required')
+})
+
+// POST /auth/telegram - Login with Telegram chat ID
+authRouter.post('/telegram', zValidator('json', LoginSchema), async (c) => {
+  const { chat_id } = c.req.valid('json')
+
+  try {
+    // Check if user exists and get by chat_id
+    let user = await c.env.DB
+      .prepare('SELECT id FROM users WHERE telegram_chat_id = ?')
+      .bind(chat_id)
+      .first<{ id: string }>()
+
+    // Create user if doesn't exist
+    if (!user) {
+      await c.env.DB
+        .prepare('INSERT INTO users (telegram_chat_id) VALUES (?)')
+        .bind(chat_id)
+        .run()
+
+      // Query the user back to get the generated ID
+      user = await c.env.DB
+        .prepare('SELECT id FROM users WHERE telegram_chat_id = ?')
+        .bind(chat_id)
+        .first<{ id: string }>()
+
+      if (!user) {
+        throw new Error('Failed to create user')
+      }
+    }
+
+    // Generate JWT token (valid for 24 hours)
+    const exp = Math.floor(Date.now() / 1000) + 86400
+
+    const token = await sign(
+      {
+        sub: user.id,  // Use database user ID, not chat_id
+        chat_id: chat_id,  // Store chat_id as well if needed
+        exp
+      },
+      c.env.JWT_SECRET
+    )
+
+    const response: LoginResponse = {
+      token,
+      user_id: user.id
+    }
+
+    return c.json(response, 200)
+  } catch (err) {
+    console.error('POST /auth/telegram error:', err)
+    return c.json({ error: 'Authentication failed' }, 500)
+  }
+})
+
+export default authRouter

@@ -1,0 +1,125 @@
+/**
+ * Telegram Bot Service
+ * Handles webhook verification, message routing, and API calls
+ */
+
+import { Env } from '../types'
+
+export interface TelegramUpdate {
+  update_id: number
+  message?: {
+    message_id: number
+    chat: {
+      id: number
+      username?: string
+    }
+    from: {
+      id: number
+      first_name: string
+      username?: string
+    }
+    text: string
+    date: number
+  }
+}
+
+export interface TelegramMessage {
+  chat_id: number
+  text: string
+  message_id: number
+  from_id: number
+  timestamp: number
+}
+
+/**
+ * Verify Telegram webhook signature using HMAC-SHA256
+ * Uses constant-time comparison to prevent timing attacks
+ */
+export async function verifyTelegramSignature(
+  body: string,
+  signature: string,
+  secret: string
+): Promise<boolean> {
+  try {
+    // Create HMAC-SHA256 hash
+    const encoder = new TextEncoder()
+    const key = encoder.encode(secret)
+    const data = encoder.encode(body)
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+
+    const signature_computed = await crypto.subtle.sign('HMAC', cryptoKey, data)
+    const hex = Array.from(new Uint8Array(signature_computed))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+
+    // Constant-time comparison
+    if (signature.length !== hex.length) {
+      return false
+    }
+
+    let result = 0
+    for (let i = 0; i < signature.length; i++) {
+      result |= signature.charCodeAt(i) ^ hex.charCodeAt(i)
+    }
+
+    return result === 0
+  } catch (err) {
+    console.error('Signature verification error:', err)
+    return false
+  }
+}
+
+/**
+ * Send message via Telegram Bot API
+ */
+export async function sendTelegramMessage(
+  chatId: number,
+  text: string,
+  token: string,
+  options: {
+    parse_mode?: 'Markdown' | 'HTML'
+    reply_markup?: unknown
+  } = {}
+): Promise<Response> {
+  const url = `https://api.telegram.org/bot${token}/sendMessage`
+
+  const payload = {
+    chat_id: chatId,
+    text,
+    ...options
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+
+  return response
+}
+
+/**
+ * Parse Telegram update and extract message info
+ */
+export function parseTelegramUpdate(update: TelegramUpdate): TelegramMessage | null {
+  if (!update.message || !update.message.text) {
+    return null
+  }
+
+  const msg = update.message
+
+  return {
+    chat_id: msg.chat.id,
+    text: msg.text,
+    message_id: msg.message_id,
+    from_id: msg.from.id,
+    timestamp: msg.date * 1000
+  }
+}

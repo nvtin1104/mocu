@@ -1,0 +1,35 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "build": "npm run type-check && wrangler publish --dry-run",
+    "deploy": "wrangler publish",
+    "deploy:prod": "wrangler publish --env production",
+    "type-check": "tsc --noEmit",
+    "db:create": "wrangler d1 create mocu-db",
+    "db:migrate": "wrangler d1 migrations apply mocu-db --remote",
+    "db:migrate:local": "wrangler d1 migrations apply mocu-db --local",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.1"
+  },
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20260317.1",
+    "@hono/zod-validator": "^0.7.6",
+    "hono": "^4.12.9",
+    "wrangler": "^4.77.0",
+    "zod": "^4.3.6"
+  }
+}
