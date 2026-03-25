@@ -7,9 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
 dist
 dist-ssr
+build
 *.local
 
 # Environment variables (NEVER commit these!)
@@ -17,10 +26,24 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+.env.production.local
+.env.test.local
 
 # Cloudflare/Wrangler
 .wrangler/
 *.wrangler/
+.wrangler/state/
+.wrangler/state/**/*
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+.wrangler/state/v3/d1/**
+
+# Cache files
+.cache/
+*.cache
 
 # Editor directories and files
 .vscode/*

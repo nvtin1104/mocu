@@ -1,0 +1,103 @@
+# IDE & Editor
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Environment & Secrets (CRITICAL - DO NOT COMMIT)
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.test.local
+.dev.vars
+.secrets/
+secrets/
+
+# Build outputs
+/dist
+/build
+/out
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp.js
+.pnp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cloudflare/Wrangler
+.wrangler/
+.wrangler/state/
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+*.cache
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# IDE specific
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VS Code
+*.code-workspace
+
+# Windows
+.vscode/settings.json
+
+# macOS
+.AppleDS_Store
+.AppleDouble
+.LSOverride
+
+# Plan files (development)
+.claude/plans/
+**/plans/**/*.lock
+
+# Backup files
+*.bak
+*.backup
+*.orig
