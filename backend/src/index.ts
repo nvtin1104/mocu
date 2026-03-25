@@ -17,7 +17,15 @@ app.use(logger())
 // 2. CORS - must be early
 app.use(
   cors({
-    origin: '*', // TODO: Restrict in production
+    origin: (origin) => {
+      const allowed = [
+        'http://localhost:5173',
+        'http://localhost:4000',
+        'http://localhost:3000',
+        'https://mocu.pages.dev'
+      ]
+      return allowed.includes(origin) ? origin : ''
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     maxAge: 86400
@@ -47,7 +55,9 @@ app.route('/api/todos', todosRouter)
 app.onError((err, c) => {
   console.error('Error:', err)
 
-  const message = err instanceof Error ? err.message : 'Internal server error'
+  // Don't expose error details in production
+  const isDev = c.env.LOG_LEVEL === 'debug'
+  const message = isDev && err instanceof Error ? err.message : 'Internal server error'
 
   return c.json(
     {

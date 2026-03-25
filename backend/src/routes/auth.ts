@@ -15,6 +15,21 @@ authRouter.post('/telegram', zValidator('json', LoginSchema), async (c) => {
   const { chat_id } = c.req.valid('json')
 
   try {
+    // Rate limiting: max 10 login attempts per hour per chat_id
+    const rateLimitKey = `ratelimit:auth:${chat_id}`
+    const attemptsStr = await c.env.KV.get(rateLimitKey)
+    const attempts = Number(attemptsStr || 0)
+
+    if (attempts >= 10) {
+      return c.json({ error: 'Too many login attempts. Try again in 1 hour' }, 429)
+    }
+
+    // Increment attempts
+    await c.env.KV.put(
+      rateLimitKey,
+      String(attempts + 1),
+      { expirationTtl: 3600 } // 1 hour TTL
+    )
     // Check if user exists and get by chat_id
     let user = await c.env.DB
       .prepare('SELECT id FROM users WHERE telegram_chat_id = ?')
