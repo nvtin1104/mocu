@@ -30,6 +30,20 @@ export interface TelegramMessage {
 }
 
 /**
+ * Telegram Login Widget data
+ * Sent by Telegram when user authorizes via widget
+ */
+export interface TelegramLoginData {
+  id: number
+  first_name: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+  auth_date: number
+  hash: string
+}
+
+/**
  * Verify Telegram webhook signature using HMAC-SHA256
  * Uses constant-time comparison to prevent timing attacks
  */
@@ -70,6 +84,73 @@ export async function verifyTelegramSignature(
     return result === 0
   } catch (err) {
     console.error('Signature verification error:', err)
+    return false
+  }
+}
+
+/**
+ * Verify Telegram Login Widget data signature
+ * Algorithm from: https://core.telegram.org/widgets/login
+ * 1. Create data_check_string from sorted fields
+ * 2. Compute secret_key = SHA256(bot_token)
+ * 3. Compute HMAC-SHA256(data_check_string, secret_key)
+ * 4. Compare with received hash
+ * 5. Check auth_date is within 24 hours (replay attack prevention)
+ */
+export async function verifyTelegramLoginData(
+  data: TelegramLoginData,
+  botToken: string
+): Promise<boolean> {
+  try {
+    const { hash, ...fields } = data
+
+    // Step 1: Build data_check_string (sorted alphabetically)
+    const dataCheckString = Object.entries(fields)
+      .filter(([, v]) => v !== undefined && v !== null)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n')
+
+    const encoder = new TextEncoder()
+
+    // Step 2: secret_key = SHA256(bot_token) — raw digest, NOT HMAC
+    const secretKey = await crypto.subtle.digest('SHA-256', encoder.encode(botToken))
+
+    // Step 3: HMAC-SHA256(data_check_string, secret_key)
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      secretKey,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+    const sig = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(dataCheckString))
+    const computedHash = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+
+    // Step 4: Constant-time hash comparison
+    if (hash.length !== computedHash.length) {
+      return false
+    }
+    let result = 0
+    for (let i = 0; i < hash.length; i++) {
+      result |= hash.charCodeAt(i) ^ computedHash.charCodeAt(i)
+    }
+    if (result !== 0) {
+      return false
+    }
+
+    // Step 5: Check auth_date is within 24 hours (prevent replay attacks)
+    const authAge = Math.floor(Date.now() / 1000) - data.auth_date
+    if (authAge > 86400) {
+      console.warn('Telegram login data too old:', authAge, 'seconds')
+      return false
+    }
+
+    return true
+  } catch (err) {
+    console.error('Telegram login data verification error:', err)
     return false
   }
 }
