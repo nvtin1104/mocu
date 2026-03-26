@@ -43,6 +43,10 @@ pnpm-lock.yaml
 .pnp.js
 .pnp
 
+# pnpm specific
+.pnpm-debug.log
+pnpm-workspace.yaml.bak
+
 # Logs
 logs/
 *.log

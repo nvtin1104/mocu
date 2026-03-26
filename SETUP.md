@@ -8,9 +8,21 @@ Hướng dẫn chi tiết để setup MOCU cho phát triển local và productio
 
 ### System Requirements
 - **Node.js:** 18.0.0 hoặc mới hơn
-- **npm:** 9.0.0 hoặc mới hơn
+- **pnpm:** 8.0.0 hoặc mới hơn (thay npm để tối ưu)
 - **Git:** 2.30.0 hoặc mới hơn
 - **OS:** Windows, macOS, hoặc Linux
+
+### Install pnpm (Recommended)
+```bash
+# Cài global
+npm install -g pnpm
+
+# Verify installation
+pnpm --version    # Should be 8.0.0+
+
+# Enable corepack (tự động dùng pnpm version từ package.json)
+corepack enable
+```
 
 ### API Credentials Cần Thiết
 1. **Telegram Bot Token** — từ @BotFather trên Telegram
@@ -97,7 +109,10 @@ Lưu kết quả để sử dụng sau.
 ### 4.1 Install Dependencies
 ```bash
 cd backend
-npm install
+pnpm install        # Use pnpm instead of npm (faster, smaller)
+
+# Or if you prefer npm:
+# npm install
 ```
 
 ### 4.2 Setup Environment
@@ -147,7 +162,10 @@ Backend now running at `http://localhost:8788`
 ### 5.1 Install Dependencies
 ```bash
 cd ../frontend
-npm install
+pnpm install        # Use pnpm instead of npm (faster, smaller)
+
+# Or if you prefer npm:
+# npm install
 ```
 
 ### 5.2 Setup Environment
@@ -311,22 +329,28 @@ mocu/
 ```bash
 cd backend
 
-npm run dev              # Start dev server (8788)
-npm test                 # Run tests
-npm run type-check       # Check TypeScript
-npm run build            # Build for production
-npm run deploy           # Deploy to Cloudflare (need credentials)
-npm run db:migrate:local # Apply migrations locally
+pnpm dev                 # Start dev server (8788)
+pnpm test                # Run tests
+pnpm type-check          # Check TypeScript
+pnpm build               # Build for production
+pnpm deploy              # Deploy to Cloudflare (need credentials)
+pnpm db:migrate:local    # Apply migrations locally
+
+# Or use npm if preferred:
+# npm run dev, npm test, npm run type-check, etc.
 ```
 
 ### Frontend
 ```bash
 cd frontend
 
-npm run dev              # Start dev server (5173)
-npm run build            # Build for production
-npm run preview          # Preview production build
-npm run lint             # Lint code
+pnpm dev                 # Start dev server (5173)
+pnpm build               # Build for production
+pnpm preview             # Preview production build
+pnpm lint                # Lint code
+
+# Or use npm if preferred:
+# npm run dev, npm run build, etc.
 ```
 
 ---
