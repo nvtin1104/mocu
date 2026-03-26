@@ -2,52 +2,13 @@
  * Google Gemini API Service
  * Handles intent detection and AI responses
  */
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export interface DetectedIntent {
   intent: string
   parameters: Record<string, unknown>
   confidence: number
   raw_text: string
-}
-
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
-
-const INTENT_SCHEMA = {
-  type: 'object',
-  properties: {
-    intent: {
-      type: 'string',
-      enum: [
-        'CREATE_NOTE',
-        'CREATE_TODO',
-        'QUERY_TODOS',
-        'UPDATE_TODO',
-        'DELETE_TODO',
-        'HELP',
-        'GENERAL_CHAT'
-      ]
-    },
-    parameters: {
-      type: 'object',
-      properties: {
-        title: { type: 'string' },
-        content: { type: 'string' },
-        todo_id: { type: 'string' },
-        status: {
-          type: 'string',
-          enum: ['pending', 'in_progress', 'done']
-        },
-        query: { type: 'string' }
-      }
-    },
-    confidence: {
-      type: 'number',
-      minimum: 0,
-      maximum: 1
-    },
-    raw_text: { type: 'string' }
-  },
-  required: ['intent', 'parameters', 'confidence', 'raw_text']
 }
 
 const SYSTEM_PROMPT = `Bạn là MOCU, trợ lý cá nhân thông minh. Phân tích tin nhắn người dùng tiếng Việt và phát hiện ý định.
@@ -61,58 +22,37 @@ Các intent được hỗ trợ:
 - HELP: Yêu cầu trợ giúp (ví dụ: "/help", "bạn có thể làm gì?")
 - GENERAL_CHAT: Chat thông thường hoặc không rõ ý định
 
-Quy tắc:
-- Nếu không chắc ý định → GENERAL_CHAT
-- Confidence: 0.0-1.0 dựa trên độ chắc chắn
-- Luôn trả về JSON hợp lệ, không giải thích thêm
-- Giữ parameters đơn giản và có ích`
+Trả về JSON với format:
+{
+  "intent": "CREATE_NOTE|CREATE_TODO|QUERY_TODOS|UPDATE_TODO|DELETE_TODO|HELP|GENERAL_CHAT",
+  "parameters": {"title": "...", "content": "..."},
+  "confidence": 0.0-1.0
+}`
 
 /**
- * Detect intent from user message using Gemini API with JSON Schema
+ * Detect intent from user message using Gemini API
  */
 export async function detectIntent(
   message: string,
   apiKey: string
 ): Promise<DetectedIntent> {
-  const model = 'gemini-2.0-flash'
-  const url = `${GEMINI_API_BASE}/models/${model}:generateContent?key=${apiKey}`
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT }]
-        },
-        contents: [
-          {
-            parts: [{ text: message }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 256,
-          responseMimeType: 'application/json',
-          responseSchema: INTENT_SCHEMA
-        }
-      })
-    })
+    console.log('[GEMINI] Calling API for message:', message)
+    const client = new GoogleGenerativeAI(apiKey)
+    const model = client.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' })
 
-    if (!response.ok) {
-      console.error('Gemini API error:', response.statusText)
-      return fallbackIntent(message)
-    }
+    const prompt = `${SYSTEM_PROMPT}\n\nUser: "${message}"\n\nRespond with ONLY valid JSON, no markdown or explanation.`
 
-    const data = (await response.json()) as any
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    console.log('[GEMINI] Response:', text)
 
-    if (!content) {
+    if (!text) {
       console.warn('No content from Gemini')
       return fallbackIntent(message)
     }
 
-    const intent = JSON.parse(content) as DetectedIntent
+    const intent = JSON.parse(text) as DetectedIntent
     intent.raw_text = message
     return intent
   } catch (err) {
@@ -170,6 +110,34 @@ export function fallbackIntent(message: string): DetectedIntent {
     parameters: {},
     confidence: 0.5,
     raw_text: message
+  }
+}
+
+/**
+ * Generate conversational response using Gemini for GENERAL_CHAT
+ */
+export async function generateChatResponse(
+  message: string,
+  apiKey: string
+): Promise<string> {
+  try {
+    console.log('[GEMINI] Generating chat response for:', message)
+    const client = new GoogleGenerativeAI(apiKey)
+    const model = client.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' })
+
+    const prompt = `Bạn là MOCU, trợ lý cá nhân thông minh nói tiếng Việt. Trả lời ngắn gọn, tự nhiên và hữu ích (tối đa 100 từ).
+
+User: "${message}"
+
+Trả lời:`
+
+    const result = await model.generateContent(prompt)
+    const response = result.response.text().trim()
+    console.log('[GEMINI] Chat response:', response)
+    return response
+  } catch (err) {
+    console.error('Chat response generation error:', err)
+    return 'Hiểu rồi! Mình sẽ ghi nhớ lại. 💭'
   }
 }
 

@@ -8,7 +8,7 @@ import {
   sendTelegramMessage,
   type TelegramUpdate
 } from '../services/telegram'
-import { detectIntent } from '../services/gemini'
+import { detectIntent, generateChatResponse } from '../services/gemini'
 
 const telegramRouter = new Hono<{ Bindings: Env }>()
 
@@ -24,6 +24,9 @@ const SetWebhookSchema = z.object({
 telegramRouter.post('/webhook', async (c) => {
   // Get signature from headers
   const signature = c.req.header('X-Telegram-Bot-Api-Secret-Token')
+  console.log('[WEBHOOK] Incoming request')
+  console.log('[WEBHOOK] Signature from header:', signature)
+  console.log('[WEBHOOK] Secret in env:', c.env.TELEGRAM_SECRET)
 
   if (!signature) {
     console.warn('Missing Telegram signature')
@@ -32,12 +35,16 @@ telegramRouter.post('/webhook', async (c) => {
 
   // Get raw body for signature verification
   const body = await c.req.text()
+  console.log('[WEBHOOK] Body length:', body.length)
 
   // Verify webhook signature
-  const isValid = await verifyTelegramSignature(body, signature, c.env.TELEGRAM_SECRET)
+  // Telegram sends X-Telegram-Bot-Api-Secret-Token = secret_token (plain text, not HMAC)
+  // This is used to verify the request came from Telegram
+  const isValid = signature === c.env.TELEGRAM_SECRET
+  console.log('[WEBHOOK] Signature valid:', isValid)
 
   if (!isValid) {
-    console.warn('Invalid Telegram signature')
+    console.warn('Invalid Telegram signature - expected:', c.env.TELEGRAM_SECRET, 'got:', signature)
     return c.json({ error: 'Invalid signature' }, 403)
   }
 
@@ -61,7 +68,7 @@ telegramRouter.post('/webhook', async (c) => {
   const { chat_id, text, from_id } = parsedMsg
 
   try {
-    // Rate limiting check (20 messages/hour per user)
+    // Rate limiting check (100 messages/hour per user)
     const rateLimitKey = `ratelimit:tg:${from_id}`
     const quotaJson = await c.env.KV.get(rateLimitKey)
     const quota = quotaJson ? (JSON.parse(quotaJson) as any) : { count: 0, reset: 0 }
@@ -71,7 +78,7 @@ telegramRouter.post('/webhook', async (c) => {
       quota.reset = Date.now() + 3600000 // 1 hour
     }
 
-    if (quota.count >= 20) {
+    if (quota.count >= 100) {
       await sendTelegramMessage(
         chat_id,
         '⚠️ Bạn đã gửi quá nhiều tin nhắn. Vui lòng thử lại sau.',
@@ -120,6 +127,7 @@ telegramRouter.post('/webhook', async (c) => {
 
     // Use Gemini to detect intent
     let intent = await detectIntent(text, c.env.GEMINI_API_KEY)
+    console.log('[INTENT] Detected:', intent.intent, 'confidence:', intent.confidence, 'params:', intent.parameters)
 
     // Log message and intent
     await c.env.KV.put(
@@ -182,9 +190,20 @@ telegramRouter.post('/webhook', async (c) => {
         break
       }
 
-      case 'HELP':
-      default: {
+      case 'HELP': {
         responseMsg = `🤖 *MOCU — Trợ lý cá nhân*\n\n📝 /note <nội dung> — Tạo ghi chú\n✅ /todo <việc> — Tạo công việc\n📋 /todos — Xem todo\n💬 Hoặc chat tự nhiên!`
+        break
+      }
+
+      case 'GENERAL_CHAT': {
+        responseMsg = await generateChatResponse(text, c.env.GEMINI_API_KEY)
+        break
+      }
+
+      case 'UPDATE_TODO':
+      case 'DELETE_TODO':
+      default: {
+        responseMsg = 'Hiểu rồi! Mình sẽ ghi nhớ lại. 💭'
         break
       }
     }
