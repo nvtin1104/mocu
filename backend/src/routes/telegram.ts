@@ -111,7 +111,7 @@ telegramRouter.post('/webhook', async (c) => {
 
     // Handle commands (fast path)
     if (text.startsWith('/')) {
-      const response = await handleCommand(text, userId, c.env)
+      const response = await handleCommand(text, userId, chat_id, c.env)
       await sendTelegramMessage(chat_id, response, c.env.TELEGRAM_BOT_TOKEN, {
         parse_mode: 'Markdown'
       })
@@ -207,13 +207,13 @@ telegramRouter.post('/webhook', async (c) => {
 /**
  * Handle telegram commands (fast path, before Gemini)
  */
-async function handleCommand(text: string, userId: string, env: Env): Promise<string> {
+async function handleCommand(text: string, userId: string, chatId: number, env: Env): Promise<string> {
   const [command, ...args] = text.split(' ')
   const arg = args.join(' ')
 
   switch (command) {
     case '/start':
-      return `🤖 *Xin chào!* Mình là MOCU, trợ lý cá nhân của bạn.\n\nBạn có thể:\n• Nói chuyện tự nhiên\n• Dùng lệnh /note, /todo, /help\n• Hỏi "hôm nay làm gì?"`
+      return `🤖 *Xin chào!* Mình là MOCU, trợ lý cá nhân của bạn.\n\n📱 *Chat ID của bạn:*\n\`${chatId}\`\n\nCó thể dùng ID này để đăng nhập trên web hoặc dùng các lệnh:\n• /note <nội dung> — Tạo ghi chú\n• /todo <việc> — Tạo công việc\n• /todos — Xem danh sách\n• /help — Hướng dẫn\n\nHoặc chat tự nhiên! 💬`
 
     case '/note':
       if (arg) {
