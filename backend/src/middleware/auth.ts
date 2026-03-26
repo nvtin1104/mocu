@@ -19,7 +19,7 @@ export const jwtAuth: MiddlewareHandler<{ Bindings: any; Variables: { userId: st
     }
 
     c.set('userId', userId)
-    await next()
+    return await next()
   } catch (err) {
     return c.json({ error: 'Invalid token' }, 401)
   }

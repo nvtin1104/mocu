@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { Env, Note } from '../types'
 
-const notesRouter = new Hono<{ Bindings: Env }>()
+const notesRouter = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
 // Validation schemas
 const CreateNoteSchema = z.object({

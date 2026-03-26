@@ -3,9 +3,9 @@ export interface Env {
   DB: D1Database
   KV: KVNamespace
   JWT_SECRET: string
-  TELEGRAM_BOT_TOKEN?: string
-  TELEGRAM_SECRET?: string
-  GEMINI_API_KEY?: string
+  TELEGRAM_BOT_TOKEN: string
+  TELEGRAM_SECRET: string
+  GEMINI_API_KEY: string
   API_VERSION: string
   LOG_LEVEL: string
   TELEGRAM_BOT_USERNAME: string

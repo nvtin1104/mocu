@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { Env, Todo } from '../types'
 
-const todosRouter = new Hono<{ Bindings: Env }>()
+const todosRouter = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
 // Validation schemas
 const CreateTodoSchema = z.object({

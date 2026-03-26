@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local",
-    "build": "npm run type-check && wrangler publish --dry-run",
-    "deploy": "wrangler publish",
-    "deploy:prod": "wrangler publish --env production",
+    "build": "npm run type-check",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
     "type-check": "tsc --noEmit",
     "db:create": "wrangler d1 create mocu-db",
     "db:migrate": "wrangler d1 migrations apply mocu-db --remote",

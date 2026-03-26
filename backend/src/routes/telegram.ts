@@ -1,38 +1,18 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { Env, User } from '../types'
+import { Env } from '../types'
 import {
   verifyTelegramSignature,
   parseTelegramUpdate,
   sendTelegramMessage,
   type TelegramUpdate
 } from '../services/telegram'
-import { detectIntent, generateResponse } from '../services/gemini'
+import { detectIntent } from '../services/gemini'
 
 const telegramRouter = new Hono<{ Bindings: Env }>()
 
 // Request validation schemas
-const WebhookBodySchema = z.object({
-  update_id: z.number(),
-  message: z
-    .object({
-      message_id: z.number(),
-      chat: z.object({
-        id: z.number(),
-        username: z.string().optional()
-      }),
-      from: z.object({
-        id: z.number(),
-        first_name: z.string(),
-        username: z.string().optional()
-      }),
-      text: z.string(),
-      date: z.number()
-    })
-    .optional()
-})
-
 const SetWebhookSchema = z.object({
   url: z.string().url('Invalid webhook URL')
 })

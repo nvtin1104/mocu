@@ -3,8 +3,6 @@
  * Handles webhook verification, message routing, and API calls
  */
 
-import { Env } from '../types'
-
 export interface TelegramUpdate {
   update_id: number
   message?: {

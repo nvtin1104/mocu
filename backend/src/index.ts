@@ -8,7 +8,7 @@ import notesRouter from './routes/notes'
 import todosRouter from './routes/todos'
 import telegramRouter from './routes/telegram'
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env; Variables: { userId: string } }>()
 
 // === Middleware Stack ===
 // 1. Logger - captures all requests
