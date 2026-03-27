@@ -203,7 +203,7 @@ telegramRouter.post('/webhook', async (c) => {
       case 'UPDATE_TODO':
       case 'DELETE_TODO':
       default: {
-        responseMsg = 'Hiểu rồi! Mình sẽ ghi nhớ lại. 💭'
+        responseMsg = await generateChatResponse(text, c.env.GEMINI_API_KEY)
         break
       }
     }

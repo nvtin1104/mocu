@@ -39,9 +39,14 @@ export async function detectIntent(
   try {
     console.log('[GEMINI] Calling API for message:', message)
     const client = new GoogleGenerativeAI(apiKey)
-    const model = client.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' })
+    const model = client.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    })
 
-    const prompt = `${SYSTEM_PROMPT}\n\nUser: "${message}"\n\nRespond with ONLY valid JSON, no markdown or explanation.`
+    const prompt = `${SYSTEM_PROMPT}\n\nUser: "${message}"`
 
     const result = await model.generateContent(prompt)
     const text = result.response.text()
@@ -123,9 +128,9 @@ export async function generateChatResponse(
   try {
     console.log('[GEMINI] Generating chat response for:', message)
     const client = new GoogleGenerativeAI(apiKey)
-    const model = client.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' })
+    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
-    const prompt = `Bạn là MOCU, trợ lý cá nhân thông minh nói tiếng Việt. Trả lời ngắn gọn, tự nhiên và hữu ích (tối đa 100 từ).
+    const prompt = `Bạn là MOCU, trợ lý cá nhân thông minh nói tiếng Việt. Trả lời ngắn gọn, tự nhiên và hữu ích (tối đa 100 từ). Không dùng markdown.
 
 User: "${message}"
 

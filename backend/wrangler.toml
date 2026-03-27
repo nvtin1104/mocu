@@ -12,6 +12,7 @@ name = "mocu-api-prod"
 [[d1_databases]]
 binding = "DB"
 database_name = "mocu-db"
+database_id = "805ab76b-c908-49ad-be5d-2a5040bae84a"
 
 [[kv_namespaces]]
 binding = "KV"
@@ -19,7 +20,7 @@ binding = "KV"
 [vars]
 API_VERSION = "1.0.0"
 LOG_LEVEL = "info"
-TELEGRAM_BOT_USERNAME = "mocu_assistant_bot"
+TELEGRAM_BOT_USERNAME = "mymocubot"
 
 # Secrets (set via: wrangler secret put NAME --env production)
 # TELEGRAM_BOT_TOKEN
